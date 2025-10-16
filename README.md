@@ -1,1 +1,1 @@
-# discord-rpc-activity-status
+# Discord RPC control via JS/TS
