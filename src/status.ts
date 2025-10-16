@@ -1,3 +1,10 @@
+/**
+ * All possible activity types for {@link setType}.
+ * Using CUSTOM seems to not work in this use case.
+ * The streaming type currently only supports Twitch and YouTube. Only https://twitch.tv/ and https://youtube.com/ urls will work.
+ * 
+ * @link https://discord.com/developers/docs/events/gateway-events#activity-object-activity-types
+ */
 export enum ActivityType {
     PLAYING,
     STREAMING,
@@ -12,6 +19,11 @@ export interface Timestamps {
     end?: number
 }
 
+/**
+ * All types for controlling which field is displayed in the user's status text in the member list
+ * 
+ * @link https://discord.com/developers/docs/events/gateway-events#activity-object-status-display-types
+ */
 export enum DisplayType {
     NAME,
     STATE,
@@ -61,6 +73,12 @@ export interface Button {
     url: string
 }
 
+
+/**
+ * Represents a user's activity status
+ * 
+ * @link https://discord.com/developers/docs/events/gateway-events#activity-object
+ */
 export class ActivityStatus {
     private name: string
     private type: ActivityType
@@ -149,7 +167,7 @@ export class ActivityStatus {
     public setInstance(instance: boolean) {
         this.instance = instance
     }
-
+    
     public setFlags(...flags: ActivityFlags[]) {
         if (flags.length != 0) {
             flags.forEach((flag) => {
