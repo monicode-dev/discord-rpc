@@ -79,7 +79,7 @@ export interface Button {
 
 
 /**
- * Represents a user's activity status
+ * Represents an user's activity status
  * 
  * @see {@link https://discord.com/developers/docs/events/gateway-events#activity-object}
  */

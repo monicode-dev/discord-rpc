@@ -2,6 +2,9 @@ import { IPCSocketError, UnimplementedError } from "./errors.ts";
 import { CloseFrame, CommandFrame, HandshakeFrame, OpCode, RPCCommand } from "./frame.ts";
 import type { ActivityStatus } from "./status.ts";
 
+/**
+ * Represents the client connected to the RPC server
+ */
 export class RPCClient {
     private clientId: string;
     private createdAt: number;
@@ -74,7 +77,7 @@ export class RPCClient {
     }
 
     /**
-     * Will setup the client for connecting to the RPC server. Will throw an {@link UnimplementedError} if {@link websocketMode} is set to true
+     * Will setup the client for connecting to the RPC server. Throws an {@link UnimplementedError} if {@link websocketMode} is set to true
      */
     public async init(): Promise<void> {
         if (this.websocketMode) {
@@ -90,6 +93,10 @@ export class RPCClient {
         }
     }
 
+    /**
+     * Updates the user activity status. Throws {@link IPCSocketError} if {@link init} has not been ran or if {@link close} has been
+     * @param {ActivityStatus} activity 
+     */
     public setActivity(activity: ActivityStatus) {
         if (this.conn) {
             activity.setCreatedAt(this.createdAt)
@@ -102,7 +109,10 @@ export class RPCClient {
         }
     }
 
-    public close() {
+    /**
+     * Closes the current connection to RPC. Returns if client was never initialized
+     */
+    public close(): void {
         if (this.conn) {
             this.conn.write(new CloseFrame().encode())
             this.conn.close()
