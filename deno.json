@@ -1,11 +1,7 @@
 {
   "name": "@monicode/discord-rpc",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
-  "tasks": {
-    "dev": "deno run --watch main.ts",
-    "run": "deno run --allow-env --allow-read --allow-write testing.ts"
-  },
   "imports": {},
   "exports": "./src/index.ts",
   "fmt": {

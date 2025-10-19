@@ -1,17 +1,15 @@
 /**
- * All possible activity types for {@link setType}.
- * Using CUSTOM seems to not work in this use case.
- * The streaming type currently only supports Twitch and YouTube. Only https://twitch.tv/ and https://youtube.com/ urls will work.
+ * All possible activity types.
+ * The {@link STREAMING} type currently only supports Twitch (https://twitch.tv/) and YouTube (https://youtube.com/) urls.
  * 
- * @link https://discord.com/developers/docs/events/gateway-events#activity-object-activity-types
+ * @see {@link https://discord.com/developers/docs/events/gateway-events#activity-object-activity-types}
  */
 export enum ActivityType {
     PLAYING,
     STREAMING,
     LISTENING,
     WATCHING,
-    CUSTOM,
-    COMPETING
+    COMPETING = 5
 }
 
 export interface Timestamps {
@@ -22,7 +20,13 @@ export interface Timestamps {
 /**
  * All types for controlling which field is displayed in the user's status text in the member list
  * 
- * @link https://discord.com/developers/docs/events/gateway-events#activity-object-status-display-types
+ * @see {@link https://discord.com/developers/docs/events/gateway-events#activity-object-status-display-types}
+ * @example
+ * ```
+ * status.setDetails("HONEST")
+ * status.setState("Baby Keem")
+ * status.setStatusDisplayType(DisplayType.DETAILS) // Will show "Listening to HONEST" in member list
+ * ```
  */
 export enum DisplayType {
     NAME,
@@ -57,15 +61,15 @@ export interface Secrets {
 }
 
 export enum ActivityFlags {
-    INSTANCE = 1,
-    JOIN = 2,
-    SPECTATE = 4,
-    JOIN_REQUEST = 8,
-    SYNC = 16,
-    PLAY = 32,
-    PARTY_PRIVACY_FRIENDS = 64,
-    PARTY_PRIVACY_VOICE_CHANNEL = 128,
-    EMBEDDED = 256
+    INSTANCE = 1 << 0,
+    JOIN = 1 << 1,
+    SPECTATE = 1 << 2,
+    JOIN_REQUEST = 1 << 3,
+    SYNC = 1 << 4,
+    PLAY = 1 << 5,
+    PARTY_PRIVACY_FRIENDS = 1 << 6,
+    PARTY_PRIVACY_VOICE_CHANNEL = 1 << 7,
+    EMBEDDED = 1 << 8
 }
 
 export interface Button {
@@ -77,7 +81,7 @@ export interface Button {
 /**
  * Represents a user's activity status
  * 
- * @link https://discord.com/developers/docs/events/gateway-events#activity-object
+ * @see {@link https://discord.com/developers/docs/events/gateway-events#activity-object}
  */
 export class ActivityStatus {
     private name: string
@@ -99,6 +103,10 @@ export class ActivityStatus {
     private flags?: number
     private buttons?: Button[]
 
+    /**
+     * @param {string} name The name of the status
+     * @param {?ActivityType} type The type of activity (Playing..., Listening to..., etc.)
+     */
     constructor(name: string, type: ActivityType = ActivityType.PLAYING) {
         this.name = name
         this.type = type
