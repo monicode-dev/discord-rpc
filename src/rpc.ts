@@ -8,6 +8,10 @@ export class RPCClient {
     private websocketMode: boolean;
     private conn?: Deno.Conn;
 
+    /**
+     * @param clientId The client id provided on the Discord Developer Portal for your app
+     * @param websocketMode If websockets should be used over IPC (currently throws an {@link UnimplementedError} when runing {@link init})
+     */
     constructor(clientId: string, websocketMode: boolean = false) {
         this.clientId = clientId;
         this.createdAt = Date.now()
@@ -69,6 +73,9 @@ export class RPCClient {
         }
     }
 
+    /**
+     * Will setup the client for connecting to the RPC server. Will throw an {@link UnimplementedError} if {@link websocketMode} is set to true
+     */
     public async init(): Promise<void> {
         if (this.websocketMode) {
             throw new UnimplementedError(
