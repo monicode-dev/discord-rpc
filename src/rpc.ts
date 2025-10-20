@@ -1,6 +1,8 @@
-import { IPCSocketError, UnimplementedError } from "./errors.ts";
-import { CloseFrame, CommandFrame, HandshakeFrame, OpCode, RPCCommand } from "./frame.ts";
+import { TransportError, UnimplementedError } from "./errors.ts";
+import { ClosePayload, CommandPayload, RPCCommand } from "./playloads.ts";
 import type { ActivityStatus } from "./status.ts";
+import { IPCClient, OpCode } from "./transports/ipc.ts";
+import type { Transport } from "./transports/transport.ts";
 
 /**
  * Represents the client connected to the RPC server
@@ -9,7 +11,7 @@ export class RPCClient {
     private clientId: string;
     private createdAt: number;
     private websocketMode: boolean;
-    private conn?: Deno.Conn;
+    private transport?: Transport
 
     /**
      * @param clientId The client id provided on the Discord Developer Portal for your app
@@ -27,69 +29,18 @@ export class RPCClient {
         }
     }
 
-    private async ipcInit(): Promise<void> {
-        if (this.conn) return
-
-        const isWin = Deno.build.os === "windows";
-        const runtimeDir = Deno.env.get("XDG_RUNTIME_DIR") + "/" ||
-            `${Deno.env.get("HOME")}/.config/discord` + "/";
-        const ipcPath = isWin ? "\\\\?\\pipe\\" : runtimeDir;
-
-        for (let i = 0; i < 10; i++) {
-            try {
-                this.conn = await Deno.connect({
-                    transport: "unix",
-                    path: ipcPath + `discord-ipc-${i}`,
-                });
-            } catch (_) {
-                // Try next index
-            }
-        }
-        if (this.conn) {
-            this.conn.write(new HandshakeFrame(this.clientId).encode());
-
-            const responseFrame = await this.readFrame()
-            if (responseFrame.payload.data.evt == "ERROR" || responseFrame.opcode == OpCode.CLOSE) throw new IPCSocketError("Unknown error")
-        } else {
-            throw new IPCSocketError(
-                "Could not connect to any discord-ipc socket",
-            );
-        }
-    }
-
-    // deno-lint-ignore no-explicit-any
-    private async readFrame(): Promise<{ opcode: number, payload: any }> {
-        if (this.conn) {
-            const header = new Uint8Array(8);
-            await this.conn.read(header);
-            const view = new DataView(header.buffer);
-            const opcode = view.getUint32(0, true);
-            const length = view.getUint32(4, true);
-
-            const body = new Uint8Array(length);
-            await this.conn.read(body);
-            const payload = JSON.parse(new TextDecoder().decode(body));
-            
-            return { opcode, payload };
-        } else {
-            throw new IPCSocketError("Failed to read incomming frame")
-        }
-    }
-
     /**
      * Will setup the client for connecting to the RPC server. Throws an {@link UnimplementedError} if {@link websocketMode} is set to true
      */
     public async init(): Promise<void> {
+        if (this.transport) return
         if (this.websocketMode) {
             throw new UnimplementedError(
                 "Websockets are currently not supported and will be implemented at a leter date",
             );
-        } 
-
-        if (this.conn) {
-            return
         } else {
-            await this.ipcInit();
+            this.transport = new IPCClient()
+            await this.transport.init(this.clientId)
         }
     }
 
@@ -98,14 +49,11 @@ export class RPCClient {
      * @param {ActivityStatus} activity 
      */
     public setActivity(activity: ActivityStatus) {
-        if (this.conn) {
+        if (this.transport) {
             activity.setCreatedAt(this.createdAt)
-            const frame = new CommandFrame(RPCCommand.SET_ACTIVITY, { pid: Deno.pid, activity: activity })
-            this.conn.write(frame.encode())
-
-            this.readFrame()
+            this.transport.write(new CommandPayload(RPCCommand.SET_ACTIVITY, { pid: Deno.pid, activity: activity }, crypto.randomUUID()))
         } else {
-            throw new IPCSocketError("Socket not intialized")
+            throw new TransportError("Client not intialized")
         }
     }
 
@@ -113,10 +61,10 @@ export class RPCClient {
      * Closes the current connection to RPC. Returns if client was never initialized
      */
     public close(): void {
-        if (this.conn) {
-            this.conn.write(new CloseFrame().encode())
-            this.conn.close()
-            this.conn = undefined
+        if (this.transport) {
+            this.transport.write(new ClosePayload(), OpCode.CLOSE)
+            this.transport.close()
+            this.transport = undefined
         } else {
             return
         }
